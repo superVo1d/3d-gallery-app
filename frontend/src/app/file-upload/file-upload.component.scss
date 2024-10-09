@@ -1,0 +1,31 @@
+.file-drop-zone {
+  border: 2px dashed #ccc;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  z-index: 100;
+}
+
+.file-drop-zone.dragging {
+  background-color: #f0f0f0;
+  border-color: #333;
+}
+
+.file-drop-zone.selected {
+  display: none;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+li {
+  margin: 5px 0;
+}

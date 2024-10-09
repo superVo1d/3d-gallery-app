@@ -1,0 +1,22 @@
+<label
+  class="file-drop-zone"
+  (dragover)="onDragOver($event)"
+  (dragleave)="onDragLeave($event)"
+  (drop)="onDrop($event)"
+  [class.dragging]="isDragging"
+  [class.selected]="isSelected"
+>
+  <p *ngIf="!fileSelected">Drag and drop files here or click to upload</p>
+  <input
+    type="file"
+    (change)="onFileSelected($event)"
+    hidden
+    accept=".glb,.gltf,.obj,.fbx"
+    #fileInput
+  />
+  <button (click)="fileInput.click()">Choose Files</button>
+
+  <div *ngIf="fileSelected">
+    <h4>{{ fileSelected.name }}</h4>
+  </div>
+</label>
