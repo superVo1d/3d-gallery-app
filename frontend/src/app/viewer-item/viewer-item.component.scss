@@ -1,0 +1,12 @@
+.viewer-item {
+  border: 1px solid #000;
+  border-left: unset;
+  position: relative;
+
+  &::after {
+    content: "";
+    display: block;
+    padding-bottom: 133.3333%;
+    width: 100%;
+  }
+}

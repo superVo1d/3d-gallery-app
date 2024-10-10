@@ -7,6 +7,7 @@ import {
   OnChanges,
   OnDestroy,
   SimpleChanges,
+  ViewChild,
 } from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -20,19 +21,19 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 export class ThreeViewerComponent
   implements AfterViewInit, OnChanges, OnDestroy
 {
+  @ViewChild('viewer') container: ElementRef | null = null;
+
   @Input() modelFile: File | null = null; // File input
   @Input() modelUrl: string | null = null; // URL input
   private renderer!: THREE.WebGLRenderer;
   private scene!: THREE.Scene;
   private camera!: THREE.PerspectiveCamera;
   private controls!: OrbitControls;
-  private container!: HTMLElement;
   private currentModel: THREE.Object3D | null = null; // Store the current model
 
   constructor(private el: ElementRef) {}
 
   ngAfterViewInit(): void {
-    this.container = this.el.nativeElement.querySelector('#viewer');
     this.initThree();
     this.animate(); // Start animation loop
 
@@ -59,8 +60,8 @@ export class ThreeViewerComponent
   initThree(): void {
     this.scene = new THREE.Scene();
 
-    const width = this.container.clientWidth;
-    const height = this.container.clientHeight;
+    const width = this.container?.nativeElement.clientWidth;
+    const height = this.container?.nativeElement.clientHeight;
     this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
     this.camera.position.z = 5;
 
@@ -68,7 +69,7 @@ export class ThreeViewerComponent
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.setSize(width, height);
-    this.container.appendChild(this.renderer.domElement);
+    this.container?.nativeElement.appendChild(this.renderer.domElement);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
@@ -85,8 +86,8 @@ export class ThreeViewerComponent
 
   onWindowResize(): void {
     // Update camera aspect ratio and renderer size
-    const width = this.container.clientWidth;
-    const height = this.container.clientHeight;
+    const width = this.container?.nativeElement.clientWidth;
+    const height = this.container?.nativeElement.clientHeight;
 
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix(); // Notify the camera of the new aspect ratio
