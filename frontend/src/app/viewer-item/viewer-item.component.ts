@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 
 @Component({
   selector: 'app-viewer-item',
@@ -7,6 +7,10 @@ import { Component } from '@angular/core';
 })
 export class ViewerItemComponent {
   selectedFile: File | null = null;
+
+  @Input() name = ''; // URL input
+  @Input() author = ''; // URL input
+  @Input() modelUrl: string | null = null; // URL input
 
   onFileSelected(file: File | null): void {
     this.selectedFile = file; // Update the selected file

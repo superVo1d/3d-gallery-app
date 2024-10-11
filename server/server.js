@@ -1,50 +1,85 @@
-const express = require('express');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const express = require("express");
+const multer = require("multer");
+const fs = require("fs-extra");
+const path = require("path");
+const cors = require("cors"); // Import CORS middleware
+
 const app = express();
 const port = 3001;
 
-// Configure Multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname)); // Save with unique name
-  },
-});
+// CORS configuration
+const corsOptions = {
+  origin: "http://localhost:4200", // Change to the port your Angular app is running on
+  optionsSuccessStatus: 200, // Some legacy browsers (IE11) choke on 204
+};
 
-const upload = multer({ storage });
+app.use(cors(corsOptions)); // Enable CORS for all routes
 
-// Route to upload a 3D model
-app.post('/upload', upload.single('file'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).send('No file uploaded.');
-  }
-  res.send({ message: 'File uploaded successfully', file: req.file });
-});
+// Storage for uploaded files
+const uploadFolder = "./uploads";
+fs.ensureDirSync(uploadFolder);
 
-// API Route to return the list of models
-app.get('/models', (req, res) => {
-  const modelsDirectory = path.join(__dirname, 'uploads/');
+// JSON file to store metadata
+const modelsFilePath = "./models.json";
+fs.ensureFileSync(modelsFilePath);
 
-  // Read files from the uploads directory
-  fs.readdir(modelsDirectory, (err, files) => {
-    if (err) {
-      return res.status(500).json({ message: 'Unable to read models directory' });
-    }
+// Load or create the models JSON file
+let models = [];
+if (fs.existsSync(modelsFilePath)) {
+  models = fs.readJsonSync(modelsFilePath, { throws: false }) || [];
+}
 
-    // Filter for 3D model file types
-    const modelFiles = files.filter(file =>
-      ['.obj', '.fbx', '.glb', '.gltf'].includes(path.extname(file))
+// Multer configuration for file upload
+const upload = multer({
+  dest: uploadFolder,
+  limits: { fileSize: 10 * 1024 * 1024 }, // Limit file size to 10MB
+  fileFilter: (req, file, cb) => {
+    const filetypes = /glb|gltf/;
+    const extname = filetypes.test(
+      path.extname(file.originalname).toLowerCase()
     );
+    if (extname) {
+      return cb(null, true);
+    }
+    cb(new Error("Only .glb or .gltf files are allowed!"));
+  },
+});
 
-    // Send the list of model file names
-    res.json({ models: modelFiles });
+// POST /api/upload to upload a file and save metadata
+app.post("/api/upload", upload.single("model"), (req, res) => {
+  const { name, author } = req.body;
+
+  if (!name || !author || !req.file) {
+    return res
+      .status(400)
+      .send({ error: "Missing required fields: name, author, or file." });
+  }
+
+  const fileUrl = `/uploads/${req.file.filename}`;
+  const modelData = {
+    name,
+    author,
+    modelUrl: fileUrl,
+  };
+
+  models.push(modelData);
+  fs.writeJsonSync(modelsFilePath, models);
+
+  res.status(200).send({
+    message: "File uploaded and metadata saved successfully.",
+    modelData,
   });
 });
 
+// GET /api/items to retrieve the list of all models
+app.get("/api/items", (req, res) => {
+  res.status(200).send(models);
+});
+
+// Serve uploaded files statically
+app.use("/uploads", express.static(uploadFolder));
+
+// Start server
 app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+  console.log(`Server is running on http://localhost:${port}`);
 });

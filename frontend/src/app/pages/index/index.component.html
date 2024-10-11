@@ -1,5 +1,11 @@
 <div class="index-page__grid">
-  <app-viewer-item></app-viewer-item>
-  <app-viewer-item></app-viewer-item>
-  <app-viewer-item></app-viewer-item>
+  <ng-container *ngIf="!loading && items.length > 0">
+    <app-viewer-item
+      *ngFor="let model of items"
+      [name]="model.name"
+      [author]="model.author"
+      [modelUrl]="model.modelUrl"
+    ></app-viewer-item>
+    <app-viewer-item></app-viewer-item>
+  </ng-container>
 </div>

@@ -4,9 +4,8 @@
   (dragleave)="onDragLeave($event)"
   (drop)="onDrop($event)"
   [class.dragging]="isDragging"
-  [class.selected]="isSelected"
+  [class.selected]="!!selectedFile"
 >
-  <p *ngIf="!fileSelected">Drag and drop files here or click to upload</p>
   <input
     type="file"
     (change)="onFileSelected($event)"
@@ -14,9 +13,14 @@
     accept=".glb,.gltf,.obj,.fbx"
     #fileInput
   />
-  <button (click)="fileInput.click()">Choose Files</button>
-
-  <div *ngIf="fileSelected">
-    <h4>{{ fileSelected.name }}</h4>
-  </div>
 </label>
+
+<div class="file-upload">
+  <input type="text" placeholder="Model Name" [(ngModel)]="name" />
+  <input type="text" placeholder="Author" [(ngModel)]="author" />
+  <button (click)="onSubmit()">Отправить</button>
+</div>
+
+<div *ngIf="fileSelected">
+  <h4>{{ fileSelected.name }}</h4>
+</div>

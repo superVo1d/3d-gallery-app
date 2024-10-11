@@ -1,6 +1,22 @@
 <div class="viewer-item">
   <div>
-    <app-file-upload (fileSelected)="onFileSelected($event)"></app-file-upload>
-    <app-three-viewer [modelFile]="selectedFile"></app-three-viewer>
+    <app-file-upload
+      (fileSelected)="onFileSelected($event)"
+      [name]="name"
+      [author]="author"
+      *ngIf="!modelUrl"
+    ></app-file-upload>
+    <app-three-viewer
+      [modelFile]="selectedFile"
+      [modelUrl]="modelUrl"
+    ></app-three-viewer>
+    <div class="viewer-item__title">
+      <div class="name">
+        <h2>{{ name }}</h2>
+      </div>
+      <div class="author">
+        <h3>{{ name }}</h3>
+      </div>
+    </div>
   </div>
 </div>

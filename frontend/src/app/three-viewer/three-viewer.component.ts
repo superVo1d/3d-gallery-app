@@ -98,11 +98,13 @@ export class ThreeViewerComponent
   loadModelFromUrl(modelUrl: string): void {
     const loader = new GLTFLoader();
     loader.load(
-      modelUrl,
+      `http://localhost:3001${modelUrl}`,
       (gltf) => {
         // Clear existing models from the scene if needed
-        this.clearScene();
+        // this.clearScene();
+
         this.currentModel = gltf.scene; // Store the current model
+        this.currentModel.castShadow = true;
         this.scene.add(this.currentModel);
         this.centerAndScaleModel(this.currentModel);
       },
@@ -123,7 +125,6 @@ export class ThreeViewerComponent
         // this.clearScene();
         this.currentModel = gltf.scene; // Store the current model
         this.currentModel.castShadow = true;
-        this.currentModel.receiveShadow = true;
         this.scene.add(this.currentModel);
         this.centerAndScaleModel(this.currentModel);
       });
