@@ -1,25 +1,67 @@
-<label
-  class="file-drop-zone"
-  (dragover)="onDragOver($event)"
-  (dragleave)="onDragLeave($event)"
-  (drop)="onDrop($event)"
-  [class.dragging]="isDragging"
-  [class.selected]="!!selectedFile"
->
-  <input
-    type="file"
-    (change)="onFileSelected($event)"
-    hidden
-    accept=".glb,.gltf,.obj,.fbx"
-    #fileInput
-  />
-</label>
+<form [formGroup]="form">
+  <div
+    aria-hidden="true"
+    class="file-deselect"
+    *ngIf="isSelected"
+    (click)="deselectFile()"
+    (keyup)="deselectFile()"
+    role="button"
+  >
+    &#x274c;
+  </div>
 
-<div class="file-upload">
-  <input type="text" placeholder="Model Name" [(ngModel)]="name" />
-  <input type="text" placeholder="Author" [(ngModel)]="author" />
-  <button (click)="onSubmit()">Отправить</button>
-</div>
+  <label
+    class="file-drop-zone"
+    (dragover)="onDragOver($event)"
+    (dragleave)="onDragLeave($event)"
+    (drop)="onDrop($event)"
+    [class.dragging]="isDragging"
+    [class.selected]="!!selectedFile"
+  >
+    <input
+      type="file"
+      (change)="onFileSelected($event)"
+      hidden
+      accept=".glb,.gltf,.obj,.fbx"
+      #fileInput
+    />
+    <div class="file-drop-zone__label">
+      <div class="label">Drop your 3D model here.</div>
+      <div class="caption">
+        Supported formats: .glb, .gltf, .obj, .fbx. File size must be less than
+        10 MB.
+      </div>
+    </div>
+  </label>
+
+  <div class="file-upload">
+    <div class="file-upload__inputs">
+      <app-input
+        #nameInput
+        formControlName="name"
+        placeholder="Model Name"
+      ></app-input>
+      <app-input
+        #authorInput
+        formControlName="author"
+        placeholder="Author"
+      ></app-input>
+      <app-select
+        #animationInput
+        [options]="['orbit', 'zoom', 'pan', 'flyThrough']"
+        (selectionChange)="onChangeAnimationType($event)"
+      ></app-select>
+    </div>
+    <app-button
+      #submitButton
+      (click)="onSubmit()"
+      class="file-upload__button"
+      styleClass="primary"
+      [disabled]="isSubmitDisabled"
+      >Publish</app-button
+    >
+  </div>
+</form>
 
 <div *ngIf="fileSelected">
   <h4>{{ fileSelected.name }}</h4>

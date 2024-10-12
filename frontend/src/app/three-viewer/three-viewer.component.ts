@@ -2,7 +2,6 @@ import {
   Component,
   ElementRef,
   Input,
-  OnInit,
   AfterViewInit,
   OnChanges,
   OnDestroy,
@@ -12,6 +11,8 @@ import {
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+
+export type AnimationType = 'orbit' | 'zoom' | 'pan' | 'flyThrough';
 
 @Component({
   selector: 'app-three-viewer',
@@ -25,13 +26,63 @@ export class ThreeViewerComponent
 
   @Input() modelFile: File | null = null; // File input
   @Input() modelUrl: string | null = null; // URL input
+  @Input() controlsAvaliable = false;
+  @Input() animationType: AnimationType | undefined = 'orbit';
+
   private renderer!: THREE.WebGLRenderer;
   private scene!: THREE.Scene;
   private camera!: THREE.PerspectiveCamera;
   private controls!: OrbitControls;
   private currentModel: THREE.Object3D | null = null; // Store the current model
+  private isAnimating = true; // Tracks if animation is active
 
   constructor(private el: ElementRef) {}
+
+  private angle = 0;
+
+  orbitCamera(): void {
+    const radius = 5; // Distance from the center
+    this.angle += 0.01; // Increment angle to rotate
+    this.camera.position.x = radius * Math.cos(this.angle);
+    this.camera.position.z = radius * Math.sin(this.angle);
+    this.camera.lookAt(0, 0, 0); // Always look at the center of the scene
+  }
+
+  private flyThroughSpeed = 0.01; // Control speed of the loop
+  private loopTime = 0;
+
+  flyThroughCamera(): void {
+    this.loopTime += this.flyThroughSpeed;
+
+    const radius = 5; // Define a radius for the loop
+    const offsetY = 2; // Vertical offset to avoid too much movement in Y-axis
+
+    // Loop using sin and cos functions for smooth circular motion
+    this.camera.position.x = radius * Math.sin(this.loopTime); // Oscillates on X-axis
+    this.camera.position.y = offsetY * Math.sin(this.loopTime * 0.5); // Slower Y oscillation
+    this.camera.position.z = radius * Math.cos(this.loopTime); // Oscillates on Z-axis
+
+    // Always look at the center of the scene
+    this.camera.lookAt(0, 0, 0);
+  }
+
+  private panDirection = 1;
+
+  panCamera(): void {
+    this.camera.position.x += 0.02 * this.panDirection; // Move left/right
+    if (this.camera.position.x > 2 || this.camera.position.x < -2) {
+      this.panDirection *= -1; // Reverse direction when hitting bounds
+    }
+  }
+
+  private zoomDirection = 1;
+
+  zoomCamera(): void {
+    this.camera.position.z += 0.05 * this.zoomDirection; // Move closer or further
+    if (this.camera.position.z < 2 || this.camera.position.z > 10) {
+      this.zoomDirection *= -1; // Reverse direction when hitting bounds
+    }
+  }
 
   ngAfterViewInit(): void {
     this.initThree();
@@ -42,9 +93,17 @@ export class ThreeViewerComponent
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (changes['animationType']) {
+      this.resetCamera();
+    }
+
     // Check if modelFile or modelUrl has changed
-    if (changes['modelFile'] && this.modelFile) {
-      this.loadModelFromFile(this.modelFile);
+    if (changes['modelFile']) {
+      if (this.modelFile) {
+        this.loadModelFromFile(this.modelFile);
+      } else {
+        this.clearScene();
+      }
     }
 
     if (changes['modelUrl'] && this.modelUrl) {
@@ -71,10 +130,12 @@ export class ThreeViewerComponent
     this.renderer.setSize(width, height);
     this.container?.nativeElement.appendChild(this.renderer.domElement);
 
-    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    this.controls.enableDamping = true;
-    this.controls.dampingFactor = 0.25;
-    this.controls.enableZoom = true;
+    if (this.controlsAvaliable) {
+      this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+      this.controls.enableDamping = true;
+      this.controls.dampingFactor = 0.25;
+      this.controls.enableZoom = true;
+    }
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 1); // Increase intensity
     this.scene.add(ambientLight);
@@ -133,30 +194,62 @@ export class ThreeViewerComponent
   }
 
   clearScene(): void {
+    if (!this.scene) {
+      return;
+    }
+
     while (this.scene.children.length > 0) {
       this.scene.remove(this.scene.children[0]);
     }
+  }
+
+  resetCamera(): void {
+    this.camera?.position.set(0, 0, 5); // Reset to default position
+    this.camera?.rotation.set(0, 0, 0); // Reset rotation
+    this.camera?.updateProjectionMatrix(); // Ensure the camera is updated
   }
 
   centerAndScaleModel(model: THREE.Object3D): void {
     const box = new THREE.Box3().setFromObject(model);
     const size = box.getSize(new THREE.Vector3());
     const maxAxis = Math.max(size.x, size.y, size.z);
-    model.scale.multiplyScalar(1.0 / maxAxis); // Normalize size to fit
+    model.scale.multiplyScalar(4.0 / maxAxis); // Normalize size to fit
     box.setFromObject(model);
     const center = box.getCenter(new THREE.Vector3());
     model.position.sub(center); // Center the model
   }
 
   animate(): void {
+    if (!this.isAnimating) {
+      return; // Stop the animation if isAnimating is false
+    }
+
     requestAnimationFrame(() => this.animate());
 
     // Autorotate the current model
-    if (this.currentModel) {
-      this.currentModel.rotation.y += 0.01; // Rotate around the Y-axis
+    // if (this.currentModel) {
+    //   this.currentModel.rotation.y += 0.01; // Rotate around the Y-axis
+    // }
+
+    switch (this.animationType) {
+      case 'orbit':
+        this.orbitCamera();
+        break;
+      case 'zoom':
+        this.zoomCamera();
+        break;
+      case 'pan':
+        this.panCamera();
+        break;
+      case 'flyThrough':
+        this.flyThroughCamera();
+        break;
+      default:
+        this.orbitCamera(); // Fallback to orbit
+        break;
     }
 
-    this.controls.update();
+    this.controls?.update();
     this.renderer.render(this.scene, this.camera);
   }
 }

@@ -27,4 +27,5 @@ yarn-error.log
 .DS_Store
 Thumbs.db
 
-/server/uploads
+/uploads
+models.json

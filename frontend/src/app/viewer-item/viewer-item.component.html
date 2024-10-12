@@ -2,6 +2,8 @@
   <div>
     <app-file-upload
       (fileSelected)="onFileSelected($event)"
+      [animation]="animationType"
+      (animationType)="onAnimationTypeChange($event)"
       [name]="name"
       [author]="author"
       *ngIf="!modelUrl"
@@ -9,6 +11,8 @@
     <app-three-viewer
       [modelFile]="selectedFile"
       [modelUrl]="modelUrl"
+      [animationType]="animationType"
+      [controlsAvaliable]="!modelUrl"
     ></app-three-viewer>
     <div class="viewer-item__title">
       <div class="name">

@@ -1,0 +1,10 @@
+<div class="input">
+  <input
+    #inputRef
+    type="text"
+    [value]="value"
+    (input)="updateValue($event)"
+    (blur)="onTouched()"
+    [placeholder]="placeholder"
+  />
+</div>

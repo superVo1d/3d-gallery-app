@@ -47,7 +47,7 @@ const upload = multer({
 
 // POST /api/upload to upload a file and save metadata
 app.post("/api/upload", upload.single("model"), (req, res) => {
-  const { name, author } = req.body;
+  const { name, author, animation } = req.body;
 
   if (!name || !author || !req.file) {
     return res
@@ -59,6 +59,7 @@ app.post("/api/upload", upload.single("model"), (req, res) => {
   const modelData = {
     name,
     author,
+    animation,
     modelUrl: fileUrl,
   };
 
