@@ -24,8 +24,8 @@ export class ThreeViewerComponent
 {
   @ViewChild('viewer') container: ElementRef | null = null;
 
-  @Input() modelFile: File | null = null; // File input
-  @Input() modelUrl: string | null = null; // URL input
+  @Input() modelFile: File | null = null;
+  @Input() modelUrl: string | null = null;
   @Input() controlsAvaliable = false;
   @Input() animationType: AnimationType | undefined = 'orbit';
 
@@ -33,63 +33,36 @@ export class ThreeViewerComponent
   private scene!: THREE.Scene;
   private camera!: THREE.PerspectiveCamera;
   private controls!: OrbitControls;
-  private currentModel: THREE.Object3D | null = null; // Store the current model
-  private isAnimating = true; // Tracks if animation is active
+  private currentModel: THREE.Object3D | null = null;
+  private isAnimating = true;
 
   constructor(private el: ElementRef) {}
 
   private angle = 0;
-
-  orbitCamera(): void {
-    const radius = 5; // Distance from the center
-    this.angle += 0.01; // Increment angle to rotate
-    this.camera.position.x = radius * Math.cos(this.angle);
-    this.camera.position.z = radius * Math.sin(this.angle);
-    this.camera.lookAt(0, 0, 0); // Always look at the center of the scene
-  }
-
-  private flyThroughSpeed = 0.01; // Control speed of the loop
+  private flyThroughSpeed = 0.01;
   private loopTime = 0;
-
-  flyThroughCamera(): void {
-    this.loopTime += this.flyThroughSpeed;
-
-    const radius = 5; // Define a radius for the loop
-    const offsetY = 2; // Vertical offset to avoid too much movement in Y-axis
-
-    // Loop using sin and cos functions for smooth circular motion
-    this.camera.position.x = radius * Math.sin(this.loopTime); // Oscillates on X-axis
-    this.camera.position.y = offsetY * Math.sin(this.loopTime * 0.5); // Slower Y oscillation
-    this.camera.position.z = radius * Math.cos(this.loopTime); // Oscillates on Z-axis
-
-    // Always look at the center of the scene
-    this.camera.lookAt(0, 0, 0);
-  }
-
   private panDirection = 1;
-
-  panCamera(): void {
-    this.camera.position.x += 0.02 * this.panDirection; // Move left/right
-    if (this.camera.position.x > 2 || this.camera.position.x < -2) {
-      this.panDirection *= -1; // Reverse direction when hitting bounds
-    }
-  }
-
   private zoomDirection = 1;
-
-  zoomCamera(): void {
-    this.camera.position.z += 0.05 * this.zoomDirection; // Move closer or further
-    if (this.camera.position.z < 2 || this.camera.position.z > 10) {
-      this.zoomDirection *= -1; // Reverse direction when hitting bounds
-    }
-  }
 
   ngAfterViewInit(): void {
     this.initThree();
-    this.animate(); // Start animation loop
+    this.animate();
 
-    // Listen to window resize
     window.addEventListener('resize', this.onWindowResize.bind(this));
+
+    if (this.controlsAvaliable) {
+      this.container?.nativeElement.addEventListener(
+        'mousedown',
+        this.onCanvasInteract.bind(this),
+        false
+      );
+
+      this.container?.nativeElement.addEventListener(
+        'touchstart',
+        this.onCanvasInteract.bind(this),
+        false
+      );
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -97,23 +70,29 @@ export class ThreeViewerComponent
       this.resetCamera();
     }
 
-    // Check if modelFile or modelUrl has changed
-    if (changes['modelFile']) {
-      if (this.modelFile) {
-        this.loadModelFromFile(this.modelFile);
-      } else {
-        this.clearScene();
-      }
-    }
-
-    if (changes['modelUrl'] && this.modelUrl) {
+    if (changes['modelFile'] && this.modelFile) {
+      this.loadModelFromFile(this.modelFile);
+    } else if (changes['modelUrl'] && this.modelUrl) {
       this.loadModelFromUrl(this.modelUrl);
+    } else if (!this.modelFile && !this.modelUrl) {
+      this.clearScene(); // Clear only if no new model is loaded
     }
   }
 
   ngOnDestroy(): void {
-    // Remove the resize listener when component is destroyed
     window.removeEventListener('resize', this.onWindowResize.bind(this));
+
+    this.container?.nativeElement.removeEventListener(
+      'mousedown',
+      this.onCanvasInteract.bind(this),
+      false
+    );
+
+    this.container?.nativeElement.removeEventListener(
+      'touchstart',
+      this.onCanvasInteract.bind(this),
+      false
+    );
   }
 
   initThree(): void {
@@ -137,23 +116,32 @@ export class ThreeViewerComponent
       this.controls.enableZoom = true;
     }
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1); // Increase intensity
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1);
     this.scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1); // Increase intensity
-    directionalLight.position.set(5, 5, 5); // Adjust position
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(5, 5, 5);
+    directionalLight.castShadow = true; // Enable shadow casting
     this.scene.add(directionalLight);
+
+    // Add a plane to receive shadows
+    const planeGeometry = new THREE.PlaneGeometry(200, 200);
+    const planeMaterial = new THREE.ShadowMaterial({ opacity: 0.5 });
+    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane.rotation.x = -Math.PI / 2;
+    plane.position.y = -1;
+    plane.receiveShadow = true;
+    this.scene.add(plane);
   }
 
   onWindowResize(): void {
-    // Update camera aspect ratio and renderer size
     const width = this.container?.nativeElement.clientWidth;
     const height = this.container?.nativeElement.clientHeight;
 
     this.camera.aspect = width / height;
-    this.camera.updateProjectionMatrix(); // Notify the camera of the new aspect ratio
+    this.camera.updateProjectionMatrix();
 
-    this.renderer.setSize(width, height); // Update renderer size
+    this.renderer.setSize(width, height);
   }
 
   loadModelFromUrl(modelUrl: string): void {
@@ -161,10 +149,8 @@ export class ThreeViewerComponent
     loader.load(
       `http://localhost:3001${modelUrl}`,
       (gltf) => {
-        // Clear existing models from the scene if needed
-        // this.clearScene();
-
-        this.currentModel = gltf.scene; // Store the current model
+        this.clearScene();
+        this.currentModel = gltf.scene;
         this.currentModel.castShadow = true;
         this.scene.add(this.currentModel);
         this.centerAndScaleModel(this.currentModel);
@@ -182,74 +168,109 @@ export class ThreeViewerComponent
       const contents = event.target.result;
       const loader = new GLTFLoader();
       loader.parse(contents, '', (gltf) => {
-        // Clear existing models from the scene if needed
-        // this.clearScene();
-        this.currentModel = gltf.scene; // Store the current model
+        this.clearScene();
+        this.currentModel = gltf.scene;
         this.currentModel.castShadow = true;
         this.scene.add(this.currentModel);
         this.centerAndScaleModel(this.currentModel);
       });
     };
-    reader.readAsArrayBuffer(file); // Read file as ArrayBuffer
+    reader.readAsArrayBuffer(file);
   }
 
   clearScene(): void {
-    if (!this.scene) {
-      return;
-    }
+    // Retain only the lighting and plane
+    const toRetain = [THREE.AmbientLight, THREE.DirectionalLight, THREE.Mesh];
 
-    while (this.scene.children.length > 0) {
-      this.scene.remove(this.scene.children[0]);
-    }
+    if (!this.scene) return;
+
+    this.scene.children = this.scene.children.filter((child) =>
+      toRetain.some((type) => child instanceof type)
+    );
+    this.currentModel = null;
   }
 
   resetCamera(): void {
-    this.camera?.position.set(0, 0, 5); // Reset to default position
-    this.camera?.rotation.set(0, 0, 0); // Reset rotation
-    this.camera?.updateProjectionMatrix(); // Ensure the camera is updated
+    this.camera?.position.set(0, 0, 5);
+    this.camera?.rotation.set(0, 0, 0);
+    this.camera?.updateProjectionMatrix();
+    this.isAnimating = true;
   }
 
   centerAndScaleModel(model: THREE.Object3D): void {
     const box = new THREE.Box3().setFromObject(model);
     const size = box.getSize(new THREE.Vector3());
     const maxAxis = Math.max(size.x, size.y, size.z);
-    model.scale.multiplyScalar(4.0 / maxAxis); // Normalize size to fit
+    model.scale.multiplyScalar(4.0 / maxAxis);
     box.setFromObject(model);
     const center = box.getCenter(new THREE.Vector3());
-    model.position.sub(center); // Center the model
+    model.position.sub(center);
+  }
+
+  onCanvasInteract(): void {
+    this.isAnimating = false;
   }
 
   animate(): void {
-    if (!this.isAnimating) {
-      return; // Stop the animation if isAnimating is false
-    }
-
     requestAnimationFrame(() => this.animate());
 
-    // Autorotate the current model
-    // if (this.currentModel) {
-    //   this.currentModel.rotation.y += 0.01; // Rotate around the Y-axis
-    // }
+    if (this.isAnimating) {
+      if (this.currentModel) {
+        this.currentModel.rotation.y += 0.01;
+      }
 
-    switch (this.animationType) {
-      case 'orbit':
-        this.orbitCamera();
-        break;
-      case 'zoom':
-        this.zoomCamera();
-        break;
-      case 'pan':
-        this.panCamera();
-        break;
-      case 'flyThrough':
-        this.flyThroughCamera();
-        break;
-      default:
-        this.orbitCamera(); // Fallback to orbit
-        break;
+      switch (this.animationType) {
+        case 'orbit':
+          this.orbitCamera();
+          break;
+        case 'zoom':
+          this.zoomCamera();
+          break;
+        case 'pan':
+          this.panCamera();
+          break;
+        case 'flyThrough':
+          this.flyThroughCamera();
+          break;
+        default:
+          this.orbitCamera();
+          break;
+      }
     }
 
     this.controls?.update();
     this.renderer.render(this.scene, this.camera);
+  }
+
+  orbitCamera(): void {
+    const radius = 5;
+    this.angle += 0.01;
+    this.camera.position.x = radius * Math.cos(this.angle);
+    this.camera.position.z = radius * Math.sin(this.angle);
+    this.camera.lookAt(0, 0, 0);
+  }
+
+  flyThroughCamera(): void {
+    this.loopTime += this.flyThroughSpeed;
+    const radius = 5;
+    const offsetY = 2;
+    this.camera.position.x = radius * Math.sin(this.loopTime);
+    this.camera.position.y = offsetY * Math.sin(this.loopTime * 0.5);
+    this.camera.position.z = radius * Math.cos(this.loopTime);
+    this.camera.lookAt(0, 0, 0);
+  }
+
+  panCamera(): void {
+    this.camera.position.x += 0.02 * this.panDirection;
+    if (this.camera.position.x > 2 || this.camera.position.x < -2) {
+      this.panDirection *= -1;
+    }
+  }
+
+  zoomCamera(): void {
+    this.camera.position.z += 0.05 * this.zoomDirection;
+    if (this.camera.position.z < 2 || this.camera.position.z > 10) {
+      this.zoomDirection *= -1;
+    }
   }
 }

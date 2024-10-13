@@ -21,6 +21,7 @@ import { AnimationType } from '../three-viewer/three-viewer.component';
 export class FileUploadComponent implements OnChanges {
   @Output() fileSelected = new EventEmitter<File | null>();
   @Output() animationType = new EventEmitter<AnimationType>();
+  @Output() modelUploadSuccess = new EventEmitter();
 
   isDragging = false;
   isSelected = false;
@@ -33,7 +34,7 @@ export class FileUploadComponent implements OnChanges {
 
   @Input() name = '';
   @Input() author = '';
-  @Input() animation: string | undefined = '';
+  @Input() animation: string | undefined = 'orbit';
 
   form = new FormGroup({
     name: new FormControl('', Validators.required),
@@ -91,6 +92,7 @@ export class FileUploadComponent implements OnChanges {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       this.handleFiles(input.files);
+      input.value = '';
     } else {
       this.fileSelected.emit(null);
     }
@@ -108,8 +110,8 @@ export class FileUploadComponent implements OnChanges {
     this.fileSelected.emit(null);
   }
 
-  onChangeAnimationType(type: AnimationType) {
-    this.animationType.emit(type);
+  onChangeAnimationType(type: string) {
+    this.animationType.emit(type as AnimationType);
   }
 
   get isSubmitDisabled(): boolean {
@@ -144,7 +146,14 @@ export class FileUploadComponent implements OnChanges {
           this.selectedFile
         )
         .subscribe({
-          next: () => console.log('Upload successful'),
+          next: () => {
+            console.log('Upload successful');
+            this.modelUploadSuccess.emit();
+            this.isSelected = false;
+            this.selectedFile = undefined;
+            this.fileSelected.emit(null);
+            this.name = '';
+          },
           error: () => console.error('Upload failed'),
         });
     }

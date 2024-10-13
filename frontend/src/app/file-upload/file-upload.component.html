@@ -1,14 +1,10 @@
 <form [formGroup]="form">
-  <div
-    aria-hidden="true"
+  <app-button
     class="file-deselect"
     *ngIf="isSelected"
     (click)="deselectFile()"
-    (keyup)="deselectFile()"
-    role="button"
-  >
-    &#x274c;
-  </div>
+    styleClass="secondary"
+  ></app-button>
 
   <label
     class="file-drop-zone"

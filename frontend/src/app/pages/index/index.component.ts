@@ -14,6 +14,11 @@ export class IndexComponent implements OnInit {
   constructor(private apiService: ApiService) {}
 
   ngOnInit(): void {
+    this.loadItems();
+  }
+
+  // Method to fetch items
+  loadItems(): void {
     this.apiService.getModels().subscribe({
       next: (data: Model[]) => {
         this.items = data;
@@ -25,5 +30,10 @@ export class IndexComponent implements OnInit {
         this.loading = false;
       },
     });
+  }
+
+  // Method to handle adding a new item
+  onAddItem(): void {
+    this.loadItems();
   }
 }

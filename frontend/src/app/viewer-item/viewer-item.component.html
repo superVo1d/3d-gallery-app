@@ -6,6 +6,7 @@
       (animationType)="onAnimationTypeChange($event)"
       [name]="name"
       [author]="author"
+      (onModelUpload)="addItem.emit()"
       *ngIf="!modelUrl"
     ></app-file-upload>
     <app-three-viewer
@@ -19,7 +20,7 @@
         <h2>{{ name }}</h2>
       </div>
       <div class="author">
-        <h3>{{ name }}</h3>
+        <h3>{{ author }}</h3>
       </div>
     </div>
   </div>

@@ -1,6 +1,12 @@
 header {
   padding: 2.4rem 1.2rem;
   border-bottom: 1px solid #000;
+
+  > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
 }
 
 h1 {

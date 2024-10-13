@@ -1,5 +1,4 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { AnimationType } from '../three-viewer/three-viewer.component';
 
 @Component({
   selector: 'app-select',
@@ -11,7 +10,7 @@ export class SelectComponent {
   @Input() name: string | undefined;
 
   // Output event to notify the parent of the selected option
-  @Output() selectionChange = new EventEmitter<AnimationType>();
+  @Output() selectionChange = new EventEmitter<string>();
 
   selectedOption: string | null = null;
 
@@ -20,6 +19,6 @@ export class SelectComponent {
     const selectElement = event.target as HTMLSelectElement;
 
     this.selectedOption = selectElement.value;
-    this.selectionChange.emit(selectElement.value as AnimationType); // Emit the selected option
+    this.selectionChange.emit(selectElement.value); // Emit the selected option
   }
 }
