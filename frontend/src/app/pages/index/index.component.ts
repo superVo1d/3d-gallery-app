@@ -32,8 +32,12 @@ export class IndexComponent implements OnInit {
     });
   }
 
+  trackById(index: number): number {
+    return index; // Assuming 'id' is a unique identifier for the items
+  }
+
   // Method to handle adding a new item
-  onAddItem(): void {
+  updateItems(): void {
     this.loadItems();
   }
 }

@@ -6,7 +6,7 @@
       (animationType)="onAnimationTypeChange($event)"
       [name]="name"
       [author]="author"
-      (onModelUpload)="addItem.emit()"
+      (modelUploadSuccess)="updateItems.emit()"
       *ngIf="!modelUrl"
     ></app-file-upload>
     <app-three-viewer

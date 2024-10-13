@@ -7,7 +7,7 @@ import { AnimationType } from '../three-viewer/three-viewer.component';
   styleUrls: ['./viewer-item.component.scss'],
 })
 export class ViewerItemComponent {
-  @Output() addItem = new EventEmitter();
+  @Output() updateItems = new EventEmitter();
 
   selectedFile: File | null = null;
 

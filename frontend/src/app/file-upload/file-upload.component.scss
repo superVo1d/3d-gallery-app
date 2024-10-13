@@ -55,6 +55,11 @@
     .caption {
       font-size: 1.5rem;
     }
+
+    @media (max-width: 400px) {
+      top: 0;
+      transform: unset;
+    }
   }
 }
 

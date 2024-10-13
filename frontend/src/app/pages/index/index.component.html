@@ -1,12 +1,12 @@
 <div class="index-page__grid">
   <ng-container *ngIf="!loading && items.length > 0">
     <app-viewer-item
-      *ngFor="let model of items"
+      *ngFor="let model of items; trackBy: trackById"
       [name]="model.name"
       [author]="model.author"
       [modelUrl]="model.modelUrl"
       [animationType]="model.animation"
-      (onAddItem)="onAddItem()"
+      (updateItems)="updateItems()"
     ></app-viewer-item>
     <app-viewer-item></app-viewer-item>
   </ng-container>
