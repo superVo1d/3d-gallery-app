@@ -116,22 +116,25 @@ export class ThreeViewerComponent
       this.controls.enableZoom = true;
     }
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+    const ambientLight = new THREE.AmbientLight(0xffffff);
+    ambientLight.castShadow = true;
     this.scene.add(ambientLight);
 
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(5, 5, 5);
+    directionalLight.position.set(0, 15, 0);
     directionalLight.castShadow = true; // Enable shadow casting
     this.scene.add(directionalLight);
 
     // Add a plane to receive shadows
-    const planeGeometry = new THREE.PlaneGeometry(200, 200);
-    const planeMaterial = new THREE.ShadowMaterial({ opacity: 0.5 });
+    const planeGeometry = new THREE.PlaneGeometry(100, 100);
+    const planeMaterial = new THREE.ShadowMaterial({ opacity: 0.2 });
     const plane = new THREE.Mesh(planeGeometry, planeMaterial);
     plane.rotation.x = -Math.PI / 2;
-    plane.position.y = -1;
+    plane.position.y = -2;
     plane.receiveShadow = true;
     this.scene.add(plane);
+
+    this.scene.fog = new THREE.Fog(0xcccccc, 8, 15);
   }
 
   onWindowResize(): void {
@@ -151,6 +154,13 @@ export class ThreeViewerComponent
       (gltf) => {
         this.clearScene();
         this.currentModel = gltf.scene;
+
+        this.currentModel.traverse((node) => {
+          if (node instanceof THREE.Mesh && node.isMesh) {
+            node.castShadow = true;
+          }
+        });
+
         this.currentModel.castShadow = true;
         this.scene.add(this.currentModel);
         this.centerAndScaleModel(this.currentModel);
@@ -170,7 +180,13 @@ export class ThreeViewerComponent
       loader.parse(contents, '', (gltf) => {
         this.clearScene();
         this.currentModel = gltf.scene;
-        this.currentModel.castShadow = true;
+
+        this.currentModel.traverse((node) => {
+          if (node instanceof THREE.Mesh && node.isMesh) {
+            node.castShadow = true;
+          }
+        });
+
         this.scene.add(this.currentModel);
         this.centerAndScaleModel(this.currentModel);
       });
