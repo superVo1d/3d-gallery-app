@@ -29,12 +29,17 @@ export class ThreeViewerComponent
   @Input() controlsAvaliable = false;
   @Input() animationType: AnimationType | undefined = 'orbit';
 
+  isLoading = true;
+  currentModel: THREE.Object3D | null = null;
+
   private renderer!: THREE.WebGLRenderer;
   private scene!: THREE.Scene;
   private camera!: THREE.PerspectiveCamera;
   private controls!: OrbitControls;
-  private currentModel: THREE.Object3D | null = null;
   private isAnimating = true;
+  private observer!: IntersectionObserver;
+  private modelToLoad: 'file' | 'url' | null = null; // Track what model to load
+  private hasThreeInitialized = false; // Track if Three.js has been initialized
 
   constructor(private el: ElementRef) {}
 
@@ -45,8 +50,7 @@ export class ThreeViewerComponent
   private zoomDirection = 1;
 
   ngAfterViewInit(): void {
-    this.initThree();
-    this.animate();
+    this.initObserver();
 
     window.addEventListener('resize', this.onWindowResize.bind(this));
 
@@ -71,9 +75,15 @@ export class ThreeViewerComponent
     }
 
     if (changes['modelFile'] && this.modelFile) {
-      this.loadModelFromFile(this.modelFile);
+      if (this.hasThreeInitialized) {
+        this.loadModelFromFile(this.modelFile);
+      }
+      this.modelToLoad = 'file'; // Mark that the file model needs to be loaded
     } else if (changes['modelUrl'] && this.modelUrl) {
-      this.loadModelFromUrl(this.modelUrl);
+      if (this.hasThreeInitialized) {
+        this.loadModelFromUrl(this.modelUrl);
+      }
+      this.modelToLoad = 'url'; // Mark that the URL model needs to be loaded
     } else if (!this.modelFile && !this.modelUrl) {
       this.clearScene(); // Clear only if no new model is loaded
     }
@@ -93,6 +103,33 @@ export class ThreeViewerComponent
       this.onCanvasInteract.bind(this),
       false
     );
+  }
+
+  initObserver(): void {
+    if (this.container?.nativeElement) {
+      this.observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              this.initThree();
+              this.animate();
+
+              if (this.modelToLoad === 'file' && this.modelFile) {
+                this.loadModelFromFile(this.modelFile);
+              } else if (this.modelToLoad === 'url' && this.modelUrl) {
+                this.loadModelFromUrl(this.modelUrl);
+              }
+
+              this.hasThreeInitialized = true;
+
+              this.observer.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0 }
+      );
+      this.observer.observe(this.container.nativeElement);
+    }
   }
 
   initThree(): void {
@@ -117,7 +154,6 @@ export class ThreeViewerComponent
     }
 
     const ambientLight = new THREE.AmbientLight(0xffffff);
-    ambientLight.castShadow = true;
     this.scene.add(ambientLight);
 
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
@@ -141,13 +177,16 @@ export class ThreeViewerComponent
     const width = this.container?.nativeElement.clientWidth;
     const height = this.container?.nativeElement.clientHeight;
 
-    this.camera.aspect = width / height;
-    this.camera.updateProjectionMatrix();
+    if (this.camera) {
+      this.camera.aspect = width / height;
+      this.camera.updateProjectionMatrix();
+    }
 
     this.renderer.setSize(width, height);
   }
 
   loadModelFromUrl(modelUrl: string): void {
+    this.isLoading = true;
     const loader = new GLTFLoader();
     loader.load(
       `http://localhost:3001${modelUrl}`,
@@ -162,17 +201,20 @@ export class ThreeViewerComponent
         });
 
         this.currentModel.castShadow = true;
-        this.scene.add(this.currentModel);
+        this.scene?.add(this.currentModel);
         this.centerAndScaleModel(this.currentModel);
+        this.isLoading = false;
       },
       undefined,
       (error) => {
         console.error('Error loading model:', error);
+        this.isLoading = false;
       }
     );
   }
 
   loadModelFromFile(file: File): void {
+    this.isLoading = true;
     const reader = new FileReader();
     reader.onload = (event: any) => {
       const contents = event.target.result;
@@ -187,9 +229,10 @@ export class ThreeViewerComponent
           }
         });
 
-        this.scene.add(this.currentModel);
+        this.scene?.add(this.currentModel);
         this.centerAndScaleModel(this.currentModel);
       });
+      this.isLoading = false;
     };
     reader.readAsArrayBuffer(file);
   }

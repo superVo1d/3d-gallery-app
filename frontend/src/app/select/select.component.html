@@ -1,5 +1,8 @@
 <div class="select">
   <select (change)="selectOption($event)" [name]="name">
+    <option *ngIf="placeholder" value="" disabled>
+      {{ placeholder }}
+    </option>
     <option *ngFor="let option of options" [value]="option">
       {{ option }}
     </option>

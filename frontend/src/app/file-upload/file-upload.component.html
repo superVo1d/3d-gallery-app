@@ -44,6 +44,7 @@
       ></app-input>
       <app-select
         #animationInput
+        placeholder="Animation type"
         [options]="['orbit', 'zoom', 'pan', 'flyThrough']"
         (selectionChange)="onChangeAnimationType($event)"
       ></app-select>

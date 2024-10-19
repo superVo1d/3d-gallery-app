@@ -6,3 +6,25 @@
   height: 100%;
   overflow: hidden;
 }
+
+.spinner {
+  border: 0.1rem solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top: 0.1rem solid #000;
+  width: 4.8rem;
+  height: 4.8rem;
+  animation: spin 1s linear infinite;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes spin {
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}

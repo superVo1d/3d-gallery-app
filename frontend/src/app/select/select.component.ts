@@ -8,6 +8,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 export class SelectComponent {
   @Input() options: string[] = [];
   @Input() name: string | undefined;
+  @Input() placeholder: string | undefined;
 
   // Output event to notify the parent of the selected option
   @Output() selectionChange = new EventEmitter<string>();
